@@ -7,6 +7,7 @@ This file is part of the Screen Hexpansion for the Tildagon
 License: MIT
 """
 import app
+import math
 import time
 
 from ctx import Context, RGB565_BYTESWAPPED
@@ -120,6 +121,9 @@ class AuxScreen(app.App):
         self._ctx = Context(width=AuxScreen.WIDTH, height=AuxScreen.HEIGHT,
             stride=AuxScreen.WIDTH * 2, format=RGB565_BYTESWAPPED, buffer=self._fb)
 
+        # Does it expose additional methods for animation?
+        self.capable = hasattr(self._ctx, "identity")
+
         self.foregrounded = False
         self.drawn = False
 
@@ -146,16 +150,20 @@ class AuxScreen(app.App):
     def get_ctx(self):
         """Starts the frame and returns the context"""
         self._ctx.save()
-        ## TODO
-        #self._ctx.identity()
+
+        # Reset to identity matrix, I think the tildagon OS driver does this
+        # because it's not doing a proper CTX end_frame() call
+        if self.capable:
+            self._ctx.identity()
 
         # Move the origin to the centre of the screen
         offset_x = AuxScreen.WIDTH / 2
         offset_y = AuxScreen.HEIGHT / 2
         self._ctx.apply_transform(1.0, 0.0, offset_x, 0.0, 1.0, offset_y, 0.0, 0.0, 1.0)
 
-        # Rotate accoriding to which hexpansion port we're plugged into
-        # TODO
+        # Rotate according to which hexpansion port we're plugged into
+        factor = self.config.port - 2
+        self._ctx.rotate(math.pi / 2 - factor * math.pi / 3)
 
         return self._ctx
 
@@ -163,8 +171,13 @@ class AuxScreen(app.App):
         """Blits to the screen and ends the frame"""
         self._ctx.restore()
         self._blit()
-        # TODO
-        #self._ctx.set_textureclock()
+
+        # From the tildagon OS driver:
+        # display.end_frame() cannot call ctx_end_frame() directly here: that resets
+        # rasterizer state, including the framebuffer clip bounds, which leaves
+        # subsequent frames blank. Advance only the texture eviction clock.
+        if self.capable:
+            self._ctx.set_textureclock(self._ctx.textureclock() + 1)
         
     def update(self, delta):
         # Just draw the eye logo and terminate the app
@@ -173,9 +186,10 @@ class AuxScreen(app.App):
         self.terminate()
 
     def _draw_eye(self, ctx):
+        ctx.gray(0.0).rectangle(-120, -120, 240, 240).fill()
         ctx.gray(0.95).arc(0, 0, 110, 0, 2 * math.pi, False).stroke()
         ctx.gray(0.95).arc(0, 0, 50, 0, 2 * math.pi, False).fill()
-        ctx.gray(0).arc(0, 0, 20, 0, 2 * math.pi, False).fill()
+        ctx.gray(0.0).arc(0, 0, 20, 0, 2 * math.pi, False).fill()
         ctx.rgb(1, 0.84, 0).arc(-9, -9, 4, 0, 2 * math.pi, False).fill()
         ctx.gray(0.95).move_to(-110, 0).quad_to(0, -110, 110, 0).stroke()
         ctx.gray(0.95).move_to(-110, 0).quad_to(0, 110, 110, 0).stroke()
