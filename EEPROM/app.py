@@ -91,6 +91,9 @@ class AuxScreen(app.App):
         self.glint_radius = 4
         self.blink_ratio = 0.5
 
+        self.elapsed = 0
+        self.duration = 1000
+
         # Config is mandatory, we're running from the EEPROM
         if config is None:
             raise TypeError
@@ -199,10 +202,22 @@ class AuxScreen(app.App):
             self.terminate()
 
     def background_update(self, delta):
+        if not self.capable:
+            return
+
+        self.elapsed += delta
+        if self.elapsed >= self.duration:
+            self.elapsed = self.elapsed - self.duration
+        self.blink_ratio = self.curve(self.duration, self.elapsed)
+
         ctx = self.get_ctx()
         self._draw_inner_eye(ctx)
         self._draw_eyelids(ctx)
         self.end_frame()
+
+    def curve(self, duration, elapsed):
+        throb = math.sin(((math.pi * 2) / duration) * elapsed)
+        return (throb + 1) * 0.5
 
     def _draw_inner_eye(self, ctx):
         ctx.gray(0.0).rectangle(-120, -120, 240, 240).fill()
