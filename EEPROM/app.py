@@ -84,6 +84,13 @@ class AuxScreen(app.App):
     def __init__(self, config=None):
         super().__init__()
 
+        # Eye dimensions
+        self.sclera_radius = 110
+        self.iris_radius = 50
+        self.pupil_radius = 20
+        self.glint_radius = 4
+        self.blink_ratio = 0.5
+
         # Config is mandatory, we're running from the EEPROM
         if config is None:
             raise TypeError
@@ -180,19 +187,66 @@ class AuxScreen(app.App):
             self._ctx.set_textureclock(self._ctx.textureclock() + 1)
         
     def update(self, delta):
-        # Just draw the eye logo and terminate the app
-        self._draw_eye(self.get_ctx())
+        ctx = self.get_ctx()
+        self._draw_inner_eye(ctx)
+        self._draw_eyelids(ctx)
         self.end_frame()
-        self.terminate()
 
-    def _draw_eye(self, ctx):
+        # If the additional methods aren't present, then might as well exit
+        if self.capable:
+            self.minimise()
+        else:
+            self.terminate()
+
+    def background_update(self, delta):
+        ctx = self.get_ctx()
+        self._draw_inner_eye(ctx)
+        self._draw_eyelids(ctx)
+        self.end_frame()
+
+    def _draw_inner_eye(self, ctx):
         ctx.gray(0.0).rectangle(-120, -120, 240, 240).fill()
-        ctx.gray(0.95).arc(0, 0, 110, 0, 2 * math.pi, False).stroke()
-        ctx.gray(0.95).arc(0, 0, 50, 0, 2 * math.pi, False).fill()
-        ctx.gray(0.0).arc(0, 0, 20, 0, 2 * math.pi, False).fill()
-        ctx.rgb(1, 0.84, 0).arc(-9, -9, 4, 0, 2 * math.pi, False).fill()
-        ctx.gray(0.95).move_to(-110, 0).quad_to(0, -110, 110, 0).stroke()
-        ctx.gray(0.95).move_to(-110, 0).quad_to(0, 110, 110, 0).stroke()
+        ctx.gray(0.95).arc(0, 0, self.iris_radius, 0, 2 * math.pi, False).fill()
+        ctx.gray(0.0).arc(0, 0, self.pupil_radius, 0, 2 * math.pi, False).fill()
+        ctx.rgb(1, 0.84, 0).arc(-9, -9, self.glint_radius, 0, 2 * math.pi, False).fill()
+
+    def _draw_eyelids(self, ctx):
+        ctx.save()
+
+        # Bézier control points for the eye lid curves
+        upper_ctrl = int(-150 * self.blink_ratio)
+        lower_ctrl = int(150 * self.blink_ratio)
+
+        # Upper
+        ctx.gray(0.0)
+        ctx.begin_path()
+        ctx.arc(0, 0, self.sclera_radius + 5, 2 * math.pi, math.pi, True)
+        ctx.line_to(-self.sclera_radius, 0)
+        ctx.quad_to(0, upper_ctrl, self.sclera_radius, 0)
+        ctx.close_path()
+        ctx.fill()
+        # Outline
+        ctx.gray(0.95)
+        ctx.move_to(-self.sclera_radius, 0)
+        ctx.quad_to(0, upper_ctrl, self.sclera_radius, 0).stroke()
+
+        # Lower
+        ctx.gray(0.0)
+        ctx.begin_path()
+        ctx.arc(0, 0, self.sclera_radius + 5, math.pi, 0, True)
+        ctx.line_to(self.sclera_radius, 0)
+        ctx.quad_to(0, lower_ctrl, -self.sclera_radius, 0)
+        ctx.close_path()
+        ctx.fill()
+        # Outline
+        ctx.gray(0.95)
+        ctx.move_to(self.sclera_radius, 0)
+        ctx.quad_to(0, lower_ctrl, -self.sclera_radius, 0).stroke()
+
+        # Outer circle
+        ctx.gray(0.95).arc(0, 0, self.sclera_radius, 0, 2 * math.pi, False).stroke()
+
+        ctx.restore()
 
 
 __app_export__ = AuxScreen # pylint: disable=invalid-name
