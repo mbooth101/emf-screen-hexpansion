@@ -2,9 +2,15 @@
 
 More screens is more better. Plug-in an auxialliary screen or two to maximise the amount of data you can display at a time! Or use them to create a multiocular Tildagon, just like everyone's favourite unicode glyph, the [multiocular O](https://en.wikipedia.org/wiki/Cyrillic_O_variants#Multiocular_O) "ꙮ".
 
-## Firmware Install
+## Firmware Install/Update
 
-If your Screen Hexpansion arrived uninitialised, or you need to manually re-flash the Hexpansion firmware for any reason, you can do so by inserting the Screen Hexpansion into port 2 of your Tildagon, and running the following commands:
+### Over-The-Air
+
+You can initialise (and subsequently update) the Screen Hexpansion's firmware using the Tildagon badge's built-in "Hexpansions" app. Select the port it's plugged into and enter the VID `0x4D42` and PID `0x5EE5` to get the correct firmware.
+
+### Manually
+
+If you need to manually re-flash the Hexpansion firmware for any reason, or you want to install custom firmware, you can do so by inserting the Screen Hexpansion into port 2 of your Tildagon, and running the following commands:
 
 ```
 cd emf-screen-hexpansion
