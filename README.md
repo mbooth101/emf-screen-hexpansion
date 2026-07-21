@@ -14,7 +14,7 @@ If you need to manually re-flash the Hexpansion firmware for any reason, or you 
 
 ```
 cd emf-screen-hexpansion
-mpremote mount EEPROM + run EEPROM/prepare_eeprom.py + cp EEPROM/app.mpy :/hexpansion/app.mpy
+mpremote mount EEPROM + run EEPROM/prepare_eeprom.py + cp EEPROM/app.py :/hexpansion/app.py
 ```
 
 Once complete, the Screen Hexpansion may be inserted into any port. The script is just hard-coded to port 2 for flashing the firmware.
